@@ -1,5 +1,5 @@
 [package]
-name = "icrs-data-worker"
+name = "icrn-data-worker"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 bitvec = "1.0.1"
+chrono = "0.4.26"
 md5 = "0.7.0"
