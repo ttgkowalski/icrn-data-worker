@@ -1,33 +1,44 @@
+use crate::segment::{FileSegment, calculate_file_size_in_bytes, segment_file};
 use chrono::Utc;
-use std::fs;
 
-/// size being u32 means that can contain 4294967295 bytes (4.294967295GB)
-/// segments are a bitflag tha indicates how much segments of each size it contains.
-/// indexes [0, 1, 2, 3] points to [MBx8, MBx16, MBx32, MBx64]
-#[derive(Debug, PartialEq)]
+pub enum DeploySource {
+    File(String),
+}
+
+#[derive(Debug)]
 pub struct Object {
     pub uuid: String,
     pub client: String,
     pub name: String,
+    pub source: String,
     pub size: usize,
+    pub segments: Vec<FileSegment>,
     pub created_at: i64,
 }
 
 impl Object {
     pub fn from_file(client: String, object_name: String, file_path: String) -> Self {
-        let content_bytes: Vec<u8> = fs::read(file_path)
-            .expect("Should have been able to read the file").to_vec();
+        let content_length: usize = calculate_file_size_in_bytes(&file_path);
         
-        let content_lengh: usize = content_bytes.len();
-
-        let uuid = md5::compute(format!("{}.{}.{}", client, object_name, content_lengh));
-
         return Object {
-            uuid: format!("{:?}", uuid),
+            uuid: format!(
+                "{:?}",
+                md5::compute(format!("{}.{}.{}", client, object_name, content_length))
+            ),
             client: client,
             name: object_name,
-            size: content_lengh,
+            source: file_path.clone(),
+            size: content_length,
+            segments: segment_file(&file_path),
             created_at: Utc::now().timestamp(),
         };
+    }
+
+    pub fn commit_to_dir(self) {
+        todo!()
+    }
+
+    pub fn commit_to_network(self) {
+        todo!()
     }
 }

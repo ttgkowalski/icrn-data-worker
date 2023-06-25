@@ -9,11 +9,11 @@ fn initialize_object_from_file() {
         "input/64mb-dummy-file.bin".to_string(),
     );
 
-    assert_eq!(dummy_object, Object {
-        uuid: "66313e4c1dc2b78264b87e550c4f70e8".to_string(),
-        client: "kowalskittg@gmail.com".to_string(),
-        name: "64mb-dummy-file.bin".to_string(),
-        size: 67108864,
-        created_at: Utc::now().timestamp(),
-    });
+    assert_eq!(dummy_object.uuid, "66313e4c1dc2b78264b87e550c4f70e8".to_string());
+    assert_eq!(dummy_object.client, "kowalskittg@gmail.com".to_string());
+    assert_eq!(dummy_object.name, "64mb-dummy-file.bin".to_string());
+    assert_eq!(dummy_object.source, "input/64mb-dummy-file.bin".to_string());
+    assert_eq!(dummy_object.size, 67108864);
+    assert_eq!(dummy_object.segments.len(), 8);
+    assert_eq!(dummy_object.created_at, Utc::now().timestamp());
 }

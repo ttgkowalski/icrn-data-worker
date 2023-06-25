@@ -1,4 +1,4 @@
-pub mod data_block;
+pub mod segment;
 pub mod object;
 
 #[cfg(test)]
