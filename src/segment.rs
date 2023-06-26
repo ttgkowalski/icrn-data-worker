@@ -23,7 +23,7 @@ pub struct FileSegment {
 impl Drop for FileSegment {
     fn drop(&mut self) {
         println!(
-            "Dropping ObjectFileSegment number `{}` from memory!",
+            "Dropping FileSegment number `{}` from memory!",
             self.segment_number
         );
     }
@@ -36,7 +36,7 @@ impl FileSegment {
             block_name: todo!(),
             file_name: todo!(),
             segment_number,
-            payload,
+            payload: payload,
             payload_digest_256: todo!(),
         }
     }
@@ -47,10 +47,18 @@ pub fn segment_file(file_path: &String) -> Vec<FileSegment> {
     let mut segments: Vec<FileSegment> = Vec::new();
 
     let file_content: Vec<u8> = fs::read(file_path).expect("Should have been able to read the file").to_vec();
+    let file_length: u32 = file_content.len().try_into().unwrap();
 
     for segment in 0..qnt_segments {
-        // FileSegment::from_u8_vec(payload, segment);
+        let segment_start: u32 = segment * SegmentSize::Block8MB as u32;
 
+        let segment_end: u32 = match (segment_start + SegmentSize::Block8MB as u32) < file_length {
+            true => segment_start + SegmentSize::Block8MB as u32,
+            false => segment_start + file_length,
+        };
+    
+        let payload: Vec<u8> = file_content[segment_start as usize..segment_end as usize].to_vec();
+        segments.push(FileSegment::from_u8_vec(payload, segment));
     }
 
     return segments;

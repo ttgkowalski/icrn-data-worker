@@ -19,7 +19,7 @@ pub struct Object {
 impl Object {
     pub fn from_file(client: String, object_name: String, file_path: String) -> Self {
         let content_length: usize = calculate_file_size_in_bytes(&file_path);
-        
+
         return Object {
             uuid: format!(
                 "{:?}",
