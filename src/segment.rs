@@ -1,6 +1,5 @@
 use std::fs;
-use crate::{object::Object};
-
+use std::{thread, time};
 /// Enum in MB, Value in Bytes
 #[derive(Debug, Copy, Clone)]
 pub enum SegmentSize {
@@ -10,11 +9,8 @@ pub enum SegmentSize {
     Block64MB = 67108864,
 }
 
-#[derive(Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct FileSegment {
-    pub object: Object,
-    pub block_name: String,
-    pub file_name: String,
     pub segment_number: u32,
     pub payload: Vec<u8>,
     pub payload_digest_256: String,
@@ -32,12 +28,9 @@ impl Drop for FileSegment {
 impl FileSegment {
     pub fn from_u8_vec(payload: Vec<u8>, segment_number: u32) -> FileSegment {
         Self {
-            object: todo!(),
-            block_name: todo!(),
-            file_name: todo!(),
             segment_number,
-            payload: payload,
-            payload_digest_256: todo!(),
+            payload,
+            payload_digest_256: String::from("fake_digest"),
         }
     }
 }
@@ -51,14 +44,18 @@ pub fn segment_file(file_path: &String) -> Vec<FileSegment> {
 
     for segment in 0..qnt_segments {
         let segment_start: u32 = segment * SegmentSize::Block8MB as u32;
-
+        
         let segment_end: u32 = match (segment_start + SegmentSize::Block8MB as u32) < file_length {
             true => segment_start + SegmentSize::Block8MB as u32,
-            false => segment_start + file_length,
+            false => segment_start + file_length-segment_start,
         };
-    
+        
+        println!("Allocating segment {} ({}->{}) on memory", segment, segment_start, segment_end);
         let payload: Vec<u8> = file_content[segment_start as usize..segment_end as usize].to_vec();
-        segments.push(FileSegment::from_u8_vec(payload, segment));
+        let file_segment: FileSegment = FileSegment::from_u8_vec(payload, segment);
+        // segments.push(std::mem::take(&mut file_segment));
+        segments.push(file_segment);
+        // drop(file_segment);
     }
 
     return segments;
