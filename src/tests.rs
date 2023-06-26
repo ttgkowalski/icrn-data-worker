@@ -17,3 +17,14 @@ fn initialize_object_from_file() {
     assert_eq!(dummy_object.segments.len(), 8);
     assert_eq!(dummy_object.created_at, Utc::now().timestamp());
 }
+
+#[test]
+fn commit_object_to_dir() {
+    let dummy_object: Object = Object::from_file(
+        "kowalskittg@gmail.com".to_string(),
+        "64mb-dummy-file.bin".to_string(),
+        "input/64mb-dummy-file.bin".to_string(),
+    );
+    assert_eq!(dummy_object.commit_to_dir("output/".to_string()), Ok(()))
+    
+}

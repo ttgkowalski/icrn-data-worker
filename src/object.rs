@@ -34,8 +34,16 @@ impl Object {
         };
     }
 
-    pub fn commit_to_dir(self) {
-        todo!()
+    pub fn commit_to_dir(self, output_dir: String) -> Result<(), String> {
+        for segment in self.segments{
+            let output_name = format!("{}.{}.{}.segment", self.uuid, self.name, segment.segment_number);
+            match std::fs::write(format!("{output_dir}/{output_name}"), segment.payload) {
+                Ok(_) => {},
+                Err(err) => return Err(format!("Failed to write ({:?}) -> {:?}", output_name, err))
+            }
+        }
+        
+        Ok(())
     }
 
     pub fn commit_to_network(self) {

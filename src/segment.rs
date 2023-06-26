@@ -1,5 +1,5 @@
 use std::fs;
-use std::{thread, time};
+
 /// Enum in MB, Value in Bytes
 #[derive(Debug, Copy, Clone)]
 pub enum SegmentSize {
@@ -14,15 +14,6 @@ pub struct FileSegment {
     pub segment_number: u32,
     pub payload: Vec<u8>,
     pub payload_digest_256: String,
-}
-
-impl Drop for FileSegment {
-    fn drop(&mut self) {
-        println!(
-            "Dropping FileSegment number `{}` from memory!",
-            self.segment_number
-        );
-    }
 }
 
 impl FileSegment {
@@ -53,7 +44,7 @@ pub fn segment_file(file_path: &String) -> Vec<FileSegment> {
         println!("Allocating segment {} ({}->{}) on memory", segment, segment_start, segment_end);
         let payload: Vec<u8> = file_content[segment_start as usize..segment_end as usize].to_vec();
         let file_segment: FileSegment = FileSegment::from_u8_vec(payload, segment);
-        // segments.push(std::mem::take(&mut file_segment));
+
         segments.push(file_segment);
         // drop(file_segment);
     }
