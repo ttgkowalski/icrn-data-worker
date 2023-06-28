@@ -13,7 +13,6 @@ pub enum SegmentSize {
 pub struct FileSegment {
     pub segment_number: u32,
     pub payload: Vec<u8>,
-    pub payload_digest_256: String,
 }
 
 impl FileSegment {
@@ -21,7 +20,6 @@ impl FileSegment {
         Self {
             segment_number,
             payload,
-            payload_digest_256: String::from("fake_digest"),
         }
     }
 }
