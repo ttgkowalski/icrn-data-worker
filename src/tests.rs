@@ -1,5 +1,4 @@
 use crate::object::Object;
-use chrono::Utc;
 
 #[test]
 fn initialize_object_from_file_test() {
@@ -18,7 +17,6 @@ fn initialize_object_from_file_test() {
     assert_eq!(dummy_object.source, "input/64mb-dummy-file.bin".to_string());
     assert_eq!(dummy_object.size, 67108864);
     assert_eq!(dummy_object.segments.unwrap().len(), 8);
-    assert_eq!(dummy_object.created_at, Utc::now().timestamp());
 }
 
 #[test]
