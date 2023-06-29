@@ -9,10 +9,9 @@ pub struct SegmentParity {
 impl SegmentParity {
     pub fn from_file_segment(file_segment: &FileSegment) -> SegmentParity {
         let segment_payload = &file_segment.payload;
-        let segment_length = &segment_payload.len();
 
-        let segment_first_chunk = &segment_payload[0..segment_length / 2];
-        let segment_last_chunk = &segment_payload[segment_length / 2..];
+        let segment_first_chunk = &segment_payload[0];
+        let segment_last_chunk = &segment_payload[1];
 
         return SegmentParity {
             segment_number: file_segment.segment_number,

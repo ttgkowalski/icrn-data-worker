@@ -44,11 +44,14 @@ impl Object {
 
     pub fn write_segments_to_dir(self, output_dir: String) -> Result<(), String> {
         for segment in self.segments.unwrap() {
-            let output_name = format!("{}.{}.segment.{}",self.uuid, self.name, segment.segment_number);
-
-            match std::fs::write(format!("{output_dir}/{output_name}"), segment.payload.clone()) {
-                Ok(_) => {}
-                Err(err) => return Err(format!("Failed to write ({:?}) -> {:?}", output_name, err))
+            
+            for i in 0..2 {
+                let output_name = format!("{}.{}.segment.{}.part.{:?}",self.uuid, self.name, segment.segment_number, i);
+               
+                match std::fs::write(format!("{output_dir}/{output_name}"), &segment.payload[i]) {
+                    Ok(_) => {}
+                    Err(err) => return Err(format!("Failed to write ({:?}) -> {:?}", output_name, err))
+                }
             }
         }
 

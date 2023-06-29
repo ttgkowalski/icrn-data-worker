@@ -12,14 +12,15 @@ pub enum SegmentSize {
 #[derive(Default, Debug, Clone)]
 pub struct FileSegment {
     pub segment_number: u32,
-    pub payload: Vec<u8>,
+    pub payload: Vec<Vec<u8>>,
 }
 
 impl FileSegment {
     pub fn from_u8_vec(payload: Vec<u8>, segment_number: u32) -> FileSegment {
+        let file_segment_length = payload.len();
         Self {
             segment_number,
-            payload,
+            payload: vec![payload[0..file_segment_length/2].to_vec(), payload[file_segment_length/2..].to_vec()],
         }
     }
 }
