@@ -1,4 +1,7 @@
-use crate::parity::{SegmentParity, HasParity, return_parity};
+use std::io::{Read, Seek};
+use std::path::Path;
+
+use crate::parity::{return_parity, HasParity, SegmentParity};
 use crate::segment::{calculate_file_size_in_bytes, segment_file, FileSegment};
 use chrono::Utc;
 
@@ -7,7 +10,6 @@ pub struct Object {
     pub uuid: String,
     pub client: String,
     pub name: String,
-    pub source: String,
     pub size: usize,
     pub segments: Option<Vec<FileSegment>>,
     pub parity_segments: Option<Vec<SegmentParity>>,
@@ -15,14 +17,41 @@ pub struct Object {
 }
 
 impl Object {
-    pub fn from_file(client: String, object_name: String, file_path: String, load_content: bool, generate_parity: bool) -> Self {
-        let content_length: usize = calculate_file_size_in_bytes(&file_path);
+    pub fn new_from_path<P: AsRef<Path>>(
+        client: String,
+        object_name: String,
+        path: P,
+        load_content: bool,
+        generate_parity: bool,
+    ) -> Self {
+        std::fs::File::open(path)
+            .map(|mut file| {
+                Self::new(
+                    client,
+                    object_name,
+                    &mut file,
+                    load_content,
+                    generate_parity,
+                )
+            })
+            .expect("Couldn't open file")
+    }
+    pub fn new<B: Read + Seek>(
+        client: String,
+        object_name: String,
+        buff: &mut B,
+        load_content: bool,
+        generate_parity: bool,
+    ) -> Self {
+        let content_length: usize = calculate_file_size_in_bytes(buff);
 
         let mut object = Object {
-            uuid: format!("{:?}", md5::compute(format!("{}.{}.{}", client, object_name, content_length))),
+            uuid: format!(
+                "{:?}",
+                md5::compute(format!("{}.{}.{}", client, object_name, content_length))
+            ),
             client,
             name: object_name,
-            source: file_path.clone(),
             size: content_length,
             segments: None,
             parity_segments: None,
@@ -30,7 +59,7 @@ impl Object {
         };
 
         if load_content == true {
-            object.segments = Some(segment_file(&file_path));
+            object.segments = Some(segment_file(buff));
         } else {
             object.segments = None;
         }
@@ -42,17 +71,40 @@ impl Object {
         return object;
     }
 
-    pub fn write_segments_to_dir(self, output_dir: String) -> Result<(), String> {
-        for segment in self.segments.unwrap() {
-            
-            for i in 0..2 {
-                let output_name = format!("{}.{}.segment.{}.part.{:?}",self.uuid, self.name, segment.segment_number, i);
-               
-                match std::fs::write(format!("{output_dir}/{output_name}"), &segment.payload[i]) {
-                    Ok(_) => {}
-                    Err(err) => return Err(format!("Failed to write ({:?}) -> {:?}", output_name, err))
-                }
-            }
+    fn write_segment_to_dir(
+        &self,
+        chunk: &[u8],
+        chunk_number: usize,
+        segment_number: usize,
+        output_dir: impl AsRef<Path>,
+    ) -> Result<(), String> {
+        let output_name = format!(
+            "{}.{}.segment.{}.part.{:?}",
+            self.uuid, self.name, segment_number, chunk_number
+        );
+
+        match std::fs::write(output_dir.as_ref().join(&output_name), chunk) {
+            Ok(_) => {}
+            Err(err) => return Err(format!("Failed to write ({:?}) -> {:?}", output_name, err)),
+        }
+
+        Ok(())
+    }
+
+    pub fn write_segments_to_dir(&self, output_dir: impl AsRef<Path>) -> Result<(), String> {
+        for segment in self.segments.as_ref().unwrap() {
+            self.write_segment_to_dir(
+                &segment.first_chunk,
+                0,
+                segment.segment_number,
+                output_dir.as_ref(),
+            )?;
+            self.write_segment_to_dir(
+                &segment.last_chunk,
+                1,
+                segment.segment_number,
+                output_dir.as_ref(),
+            )?;
         }
 
         Ok(())
@@ -60,11 +112,19 @@ impl Object {
 
     pub fn write_parities_to_dir(self, output_dir: String) -> Result<(), String> {
         for parity_segment in self.parity_segments.unwrap() {
-            let output_name = format!("{}.{}.segment.{}.parity",self.uuid, self.name, parity_segment.segment_number);
+            let output_name = format!(
+                "{}.{}.segment.{}.parity",
+                self.uuid, self.name, parity_segment.segment_number
+            );
 
-            match std::fs::write(format!("{output_dir}/{output_name}"), parity_segment.payload.clone()) {
+            match std::fs::write(
+                format!("{output_dir}/{output_name}"),
+                parity_segment.payload.clone(),
+            ) {
                 Ok(_) => {}
-                Err(err) => return Err(format!("Failed to write ({:?}) -> {:?}", output_name, err))
+                Err(err) => {
+                    return Err(format!("Failed to write ({:?}) -> {:?}", output_name, err))
+                }
             }
         }
 
@@ -82,9 +142,14 @@ impl HasParity for Object {
                     parity_segments.push(SegmentParity::from_file_segment(&segment));
                 }
             }
-            None => return Err(format!("Object \"{}\" has no FileSegment to generate parity", {self.uuid}))
+            None => {
+                return Err(format!(
+                    "Object \"{}\" has no FileSegment to generate parity",
+                    { self.uuid }
+                ))
+            }
         }
 
-        return Ok(parity_segments)
+        return Ok(parity_segments);
     }
 }

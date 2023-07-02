@@ -2,44 +2,35 @@ use crate::segment::FileSegment;
 
 #[derive(Debug)]
 pub struct SegmentParity {
-    pub segment_number: u32,
+    pub segment_number: usize,
     pub payload: Vec<u8>,
 }
 
 impl SegmentParity {
-    pub fn from_file_segment(file_segment: &FileSegment) -> SegmentParity {
-        let segment_payload = &file_segment.payload;
-
-        let segment_first_chunk = &segment_payload[0];
-        let segment_last_chunk = &segment_payload[1];
-
-        return SegmentParity {
+    pub fn from_file_segment(file_segment: &FileSegment) -> Self {
+        Self {
             segment_number: file_segment.segment_number,
-            payload: calculate_parity(segment_first_chunk, segment_last_chunk),
-        };
+            payload: calculate_parity(&file_segment.first_chunk, &file_segment.last_chunk),
+        }
     }
 }
-
 
 pub fn calculate_parity(first_chunk: &[u8], last_chunk: &[u8]) -> Vec<u8> {
-    let mut parity_chunk: Vec<u8> = Vec::new();
-    
-    for (i, byte) in first_chunk.iter().enumerate() {
-        parity_chunk.push(byte ^ last_chunk[i]);
-    }
-    
-    return parity_chunk;
+    first_chunk
+        .iter()
+        .zip(last_chunk)
+        .map(|(a, b)| a ^ b)
+        .collect()
 }
 
-pub fn return_parity(file_segments: &Vec<FileSegment>) -> Vec<SegmentParity> {
+pub fn return_parity(file_segments: &[FileSegment]) -> Vec<SegmentParity> {
     let mut parity_segments: Vec<SegmentParity> = Vec::new();
 
     for segment in file_segments {
         parity_segments.push(SegmentParity::from_file_segment(&segment));
     }
 
-
-    return parity_segments
+    return parity_segments;
 }
 
 pub trait HasParity {
