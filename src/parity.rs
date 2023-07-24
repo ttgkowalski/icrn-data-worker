@@ -27,10 +27,10 @@ pub fn return_parity(file_segments: &[FileSegment]) -> Vec<SegmentParity> {
     let mut parity_segments: Vec<SegmentParity> = Vec::new();
 
     for segment in file_segments {
-        parity_segments.push(SegmentParity::from_file_segment(&segment));
+        parity_segments.push(SegmentParity::from_file_segment(segment));
     }
 
-    return parity_segments;
+    parity_segments
 }
 
 pub trait HasParity {

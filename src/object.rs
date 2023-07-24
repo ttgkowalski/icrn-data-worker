@@ -24,17 +24,13 @@ impl Object {
         load_content: bool,
         generate_parity: bool,
     ) -> Self {
-        std::fs::File::open(path)
-            .map(|mut file| {
-                Self::new(
-                    client,
-                    object_name,
-                    &mut file,
-                    load_content,
-                    generate_parity,
-                )
-            })
-            .expect("Couldn't open file")
+        Self::new(
+            client,
+            object_name,
+            &mut std::fs::File::open(path).expect("Couldn't open file"),
+            load_content,
+            generate_parity,
+        )
     }
     pub fn new<B: Read + Seek>(
         client: String,
@@ -58,17 +54,17 @@ impl Object {
             created_at: Utc::now().timestamp(),
         };
 
-        if load_content == true {
+        if load_content {
             object.segments = Some(segment_file(buff));
         } else {
             object.segments = None;
         }
 
-        if generate_parity == true {
+        if generate_parity {
             object.parity_segments = Some(return_parity(object.segments.as_ref().unwrap()))
         }
 
-        return object;
+        object
     }
 
     fn write_segment_to_dir(
@@ -150,6 +146,6 @@ impl HasParity for Object {
             }
         }
 
-        return Ok(parity_segments);
+        Ok(parity_segments)
     }
 }

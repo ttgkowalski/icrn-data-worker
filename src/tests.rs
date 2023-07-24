@@ -47,4 +47,3 @@ fn write_parities_to_dir_test() {
         Ok(())
     )
 }
-

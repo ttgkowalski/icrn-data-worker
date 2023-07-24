@@ -1,7 +1,4 @@
-use std::{
-    fs,
-    io::{Read, Seek, SeekFrom},
-};
+use std::io::{Read, Seek, SeekFrom};
 
 /// Enum in MB, Value in Bytes
 #[derive(Debug, Copy, Clone)]
@@ -30,19 +27,21 @@ impl FileSegment {
     }
 }
 
-impl Drop for FileSegment {
-    fn drop(&mut self) {
-        println!("Dropping segment {} from the memory", self.segment_number);
-    }
-}
+//impl Drop for FileSegment {
+//    fn drop(&mut self) {
+//        println!("Dropping segment {} from the memory", self.segment_number);
+//    }
+//}
 
 pub fn segment_file<B: Read + Seek>(buff: &mut B) -> Vec<FileSegment> {
     let qnt_segments: usize = calculate_segments(calculate_file_size_in_bytes(buff));
     let mut segments: Vec<FileSegment> = Vec::new();
 
     let mut file_content = Vec::<u8>::new();
+
     buff.read_to_end(&mut file_content)
         .expect("Couldn't read file");
+
     let file_length = file_content.len();
 
     for segment in 0..qnt_segments {
@@ -50,17 +49,15 @@ pub fn segment_file<B: Read + Seek>(buff: &mut B) -> Vec<FileSegment> {
 
         let segment_end = (segment_start + SegmentSize::Block8MB as usize).min(file_length);
 
-        println!(
-            "Allocating segment {} ({}->{}) on memory",
-            segment, segment_start, segment_end
-        );
+        // println!("Allocating segment {} ({}->{}) on memory", segment, segment_start, segment_end);
+
         let payload: Vec<u8> = file_content[segment_start..segment_end].to_vec();
         let file_segment: FileSegment = FileSegment::from_u8_vec(payload, segment);
 
         segments.push(file_segment);
     }
 
-    return segments;
+    segments
 }
 
 pub fn calculate_segments(file_size: usize) -> usize {
@@ -85,5 +82,5 @@ where
         + 1;
     buff.seek(SeekFrom::Start(0))
         .expect("Couldn't reset file pointer");
-    file_size
+    file_size - 1
 }
