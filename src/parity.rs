@@ -7,6 +7,7 @@ pub struct SegmentParity {
 }
 
 impl SegmentParity {
+    #[must_use]
     pub fn from_file_segment(file_segment: &FileSegment) -> Self {
         Self {
             segment_number: file_segment.segment_number,
@@ -15,6 +16,7 @@ impl SegmentParity {
     }
 }
 
+#[must_use]
 pub fn calculate_parity(first_chunk: &[u8], last_chunk: &[u8]) -> Vec<u8> {
     first_chunk
         .iter()
@@ -23,6 +25,7 @@ pub fn calculate_parity(first_chunk: &[u8], last_chunk: &[u8]) -> Vec<u8> {
         .collect()
 }
 
+#[must_use]
 pub fn return_parity(file_segments: &[FileSegment]) -> Vec<SegmentParity> {
     let mut parity_segments: Vec<SegmentParity> = Vec::new();
 
@@ -34,5 +37,5 @@ pub fn return_parity(file_segments: &[FileSegment]) -> Vec<SegmentParity> {
 }
 
 pub trait HasParity {
-    fn generate_parity(self) -> Result<Vec<SegmentParity>, String>;
+    fn generate_parity(&self) -> Option<Vec<SegmentParity>>;
 }

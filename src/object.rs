@@ -6,6 +6,7 @@ use crate::segment::{calculate_file_size_in_bytes, segment_file, FileSegment};
 use chrono::Utc;
 
 #[derive(Debug)]
+// pub struct Object<Parity = WithoutParity> {
 pub struct Object {
     pub uuid: String,
     pub client: String,
@@ -13,8 +14,12 @@ pub struct Object {
     pub size: usize,
     pub segments: Option<Vec<FileSegment>>,
     pub parity_segments: Option<Vec<SegmentParity>>,
+    // pub parity: Parity,
     pub created_at: i64,
 }
+
+pub struct WithParity(Vec<SegmentParity>);
+pub struct WithoutParity;
 
 impl Object {
     pub fn new_from_path<P: AsRef<Path>>(
@@ -41,10 +46,10 @@ impl Object {
     ) -> Self {
         let content_length: usize = calculate_file_size_in_bytes(buff);
 
-        let mut object = Object {
+        let mut object = Self {
             uuid: format!(
                 "{:?}",
-                md5::compute(format!("{}.{}.{}", client, object_name, content_length))
+                md5::compute(format!("{client}.{object_name}.{content_length}"))
             ),
             client,
             name: object_name,
@@ -61,7 +66,12 @@ impl Object {
         }
 
         if generate_parity {
-            object.parity_segments = Some(return_parity(object.segments.as_ref().unwrap()))
+            object.parity_segments = Some(return_parity(
+                object
+                    .segments
+                    .as_ref()
+                    .expect("Failed to return parity segments"),
+            ));
         }
 
         object
@@ -88,7 +98,11 @@ impl Object {
     }
 
     pub fn write_segments_to_dir(&self, output_dir: impl AsRef<Path>) -> Result<(), String> {
-        for segment in self.segments.as_ref().unwrap() {
+        for segment in self
+            .segments
+            .as_ref()
+            .expect("Objects segment is not defined")
+        {
             self.write_segment_to_dir(
                 &segment.first_chunk,
                 0,
@@ -106,8 +120,11 @@ impl Object {
         Ok(())
     }
 
-    pub fn write_parities_to_dir(self, output_dir: String) -> Result<(), String> {
-        for parity_segment in self.parity_segments.unwrap() {
+    pub fn write_parities_to_dir(self, output_dir: &str) -> Result<(), String> {
+        for parity_segment in self
+            .parity_segments
+            .expect("parity segment not found in this object")
+        {
             let output_name = format!(
                 "{}.{}.segment.{}.parity",
                 self.uuid, self.name, parity_segment.segment_number
@@ -118,9 +135,7 @@ impl Object {
                 parity_segment.payload.clone(),
             ) {
                 Ok(_) => {}
-                Err(err) => {
-                    return Err(format!("Failed to write ({:?}) -> {:?}", output_name, err))
-                }
+                Err(err) => return Err(format!("Failed to write ({output_name:?}) -> {err:?}")),
             }
         }
 
@@ -129,23 +144,12 @@ impl Object {
 }
 
 impl HasParity for Object {
-    fn generate_parity(self) -> Result<Vec<SegmentParity>, String> {
-        let mut parity_segments: Vec<SegmentParity> = Vec::new();
-
-        match self.segments {
-            Some(segments) => {
-                for segment in segments {
-                    parity_segments.push(SegmentParity::from_file_segment(&segment));
-                }
-            }
-            None => {
-                return Err(format!(
-                    "Object \"{}\" has no FileSegment to generate parity",
-                    { self.uuid }
-                ))
-            }
-        }
-
-        Ok(parity_segments)
+    fn generate_parity(&self) -> Option<Vec<SegmentParity>> {
+        self.segments.as_ref().map(|segments| {
+            segments
+                .iter()
+                .map(SegmentParity::from_file_segment)
+                .collect()
+        })
     }
 }

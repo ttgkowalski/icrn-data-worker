@@ -60,7 +60,8 @@ pub fn segment_file<B: Read + Seek>(buff: &mut B) -> Vec<FileSegment> {
     segments
 }
 
-pub fn calculate_segments(file_size: usize) -> usize {
+#[must_use]
+pub const fn calculate_segments(file_size: usize) -> usize {
     let block_size: usize = SegmentSize::Block8MB as usize;
 
     if file_size < block_size {

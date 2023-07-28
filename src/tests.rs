@@ -17,8 +17,14 @@ fn initialize_object_from_file_test() {
     assert_eq!(dummy_object.client, "kowalskittg@gmail.com".to_string());
     assert_eq!(dummy_object.name, "64mb-dummy-file.bin".to_string());
     // assert_eq!(dummy_object.source, "input/64mb-dummy-file.bin".to_string());
-    assert_eq!(dummy_object.size, 67108864);
-    assert_eq!(dummy_object.segments.unwrap().len(), 8);
+    assert_eq!(dummy_object.size, 67_108_864);
+    assert_eq!(
+        dummy_object
+            .segments
+            .expect("Failed to get object segments")
+            .len(),
+        8
+    );
 }
 
 #[test]
@@ -30,7 +36,7 @@ fn write_segments_to_dir_test() {
         true,
         true,
     );
-    assert_eq!(dummy_object.write_segments_to_dir("output/"), Ok(()))
+    assert_eq!(dummy_object.write_segments_to_dir("output/"), Ok(()));
 }
 
 #[test]
@@ -42,8 +48,5 @@ fn write_parities_to_dir_test() {
         true,
         true,
     );
-    assert_eq!(
-        dummy_object.write_parities_to_dir("output/".to_string()),
-        Ok(())
-    )
+    assert_eq!(dummy_object.write_parities_to_dir("output/"), Ok(()));
 }
